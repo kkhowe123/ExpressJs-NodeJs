@@ -8,12 +8,28 @@ const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const catalogRouter = require("./routes/catalog"); //Import routes for "catalog" area of site
 
+//import compression library
+const compression = require("compression");
+
+//installing helmet to set appropriate HTTP headers that help protect against well-known web vulnerabilities
+const helmet = require("helmet");
 const app = express();
+
+// Set up rate limiter: maximum of twenty requests per minute
+// const RateLimit = require("express-rate-limit");
+// const limiter = RateLimit({
+//   windowMs: 1 * 60 * 1000, // 1 minute
+//   max: 20,
+// });
+// // Apply rate limiter to all requests
+// app.use(limiter);
+
 //set up mongoose connection 
 
 const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
-const mongoDB = "mongodb+srv://keanuhowe3:anime9099@cluster0.ijllzlv.mongodb.net/local_library?retryWrites=true&w=majority&appName=Cluster0";
+const dev_db_url = "mongodb+srv://keanuhowe3:anime9099@cluster0.ijllzlv.mongodb.net/local_library?retryWrites=true&w=majority&appName=Cluster0";
+const mongoDB = process.env.MONGODB_URI || dev_db_url;
 
 main().catch((err) => console.log(err));
 
@@ -36,6 +52,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use("/catalog", catalogRouter); // Add catalog routes to middleware chain.
+// Add helmet to the middleware chain.
+// Set CSP headers to allow our Bootstrap and Jquery to be served
+
+app.use(helmet.contentSecurityPolicy({
+  directives:{
+    "script-src": ["'self'", "code.jquery.com", "cdn.jsdelivr.net"],
+  },
+}),
+);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -52,5 +77,8 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+
+
 
 module.exports = app;
